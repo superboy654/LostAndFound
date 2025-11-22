@@ -1,0 +1,190 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus Lost & Found</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Role / Login screen -->
+  <div id="roleScreen" class="role-screen">
+    <div class="role-card">
+      <h1>Campus Lost &amp; Found</h1>
+      <p class="role-subtitle">Choose how you want to use the platform.</p>
+
+      <div class="role-tabs">
+        <button class="role-tab active" data-role="student">Student</button>
+        <button class="role-tab" data-role="volunteer">Volunteer / Manager</button>
+      </div>
+
+      <!-- Student registration form -->
+      <form id="studentForm" class="role-form">
+        <div class="form-row">
+          <label for="stuName">Name<span>*</span></label>
+          <input type="text" id="stuName" required placeholder="Your full name" />
+        </div>
+        <div class="form-row">
+          <label for="stuID">Student ID<span>*</span></label>
+          <input type="text" id="stuID" required placeholder="e.g. 23CSE123" />
+        </div>
+        <div class="form-row">
+          <label for="stuBranch">Branch<span>*</span></label>
+          <input type="text" id="stuBranch" required placeholder="CSE, ECE, ME, CE…" />
+        </div>
+        <div class="form-row">
+          <label for="stuSection">Section<span>*</span></label>
+          <input type="text" id="stuSection" required placeholder="e.g. CSE A" />
+        </div>
+        <button type="submit" class="btn btn-primary wide">Continue as Student</button>
+      </form>
+
+      <!-- Volunteer login form -->
+      <form id="volunteerForm" class="role-form hidden">
+        <div class="form-row">
+          <label for="volName">Name<span>*</span></label>
+          <input type="text" id="volName" required placeholder="Volunteer name" />
+        </div>
+        <div class="form-row">
+          <label for="volPassword">Secret Password<span>*</span></label>
+          <input type="password" id="volPassword" required placeholder="Ask admin for password" />
+        </div>
+        <button type="submit" class="btn btn-secondary wide">Login as Volunteer</button>
+        <p class="role-hint">
+          Only authorized Lost &amp; Found managers should use this login.
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main app -->
+  <div class="app hidden">
+    <header class="app-header">
+      <div>
+        <h1>Campus Lost &amp; Found</h1>
+        <p>Post, search and track lost items across the campus.</p>
+      </div>
+      <div class="header-right">
+        <span id="roleBadge" class="role-badge"></span>
+        <button id="addBtn" class="btn btn-primary">
+          <span>＋</span> Add Item
+        </button>
+      </div>
+    </header>
+
+    <section class="toolbar">
+      <div class="toolbar-group">
+        <label for="searchInput">Search</label>
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Item, student name, ID, section…" style="border-radius: 7px; height: 100%; width: 50%; padding: 1%;"
+          />
+        </div>
+      </div>
+
+      <div class="toolbar-group">
+        <label for="filterType">Filter</label>
+        <select id="filterType">
+          <option value="all">All items</option>
+          <option value="lost">Lost only</option>
+          <option value="found">Found only</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="items-section">
+      <div id="itemsGrid" class="grid"></div>
+      <p id="emptyState" class="empty hidden">No items match your search.</p>
+    </section>
+  </div>
+
+  <!-- Shared overlay -->
+  <div id="overlay" class="overlay hidden"></div>
+
+  <!-- Add Item Modal -->
+  <div id="formModal" class="modal hidden">
+    <h2>Add Lost / Found Item</h2>
+    <form id="itemForm" class="form">
+      <div class="form-row">
+        <label for="itemType">Type</label>
+        <select id="itemType">
+          <option value="lost">Lost</option>
+          <option value="found">Found</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="itemName">Item Name<span>*</span></label>
+        <input type="text" id="itemName" required placeholder="Wallet, ID card, notebook…" />
+      </div>
+
+      <div class="form-row">
+        <label for="itemDesc">Description<span>*</span></label>
+        <textarea id="itemDesc" rows="2" required placeholder="Colour, brand, where lost/found…"></textarea>
+      </div>
+
+      <div class="form-row">
+        <label for="itemDate">Date (when lost / found)<span>*</span></label>
+        <input type="date" id="itemDate" required />
+      </div>
+
+      <div class="form-row">
+        <label for="studentName">Owner Name<span>*</span></label>
+        <input type="text" id="studentName" required />
+      </div>
+
+      <div class="form-row">
+        <label for="studentID">Owner Student ID<span>*</span></label>
+        <input type="text" id="studentID" required />
+      </div>
+
+      <div class="form-row">
+        <label for="section">Section<span>*</span></label>
+        <input type="text" id="section" required placeholder="CSE A, ECE B…" />
+      </div>
+
+      <!-- Image: file + URL + hidden base64 -->
+      <div class="form-row">
+        <label>Image (Upload / URL / Paste)</label>
+        <input type="file" id="itemFile" accept="image/*" />
+        <input type="url" id="itemImage" placeholder="Paste image URL or paste image (Ctrl+V)" />
+        <input type="hidden" id="itemImageBase64" />
+      </div>
+
+      <div class="form-actions">
+        <button type="button" id="closeForm" class="btn btn-ghost">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Item</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Reply / Claim Modal -->
+  <div id="replyModal" class="modal hidden">
+    <h2>Reply / Claim Item</h2>
+    <form id="replyForm" class="form">
+      <input type="hidden" id="replyItemId" />
+      <div class="form-row">
+        <label for="replyName">Your Name<span>*</span></label>
+        <input type="text" id="replyName" required />
+      </div>
+      <div class="form-row">
+        <label for="replyStudentID">Your Student ID<span>*</span></label>
+        <input type="text" id="replyStudentID" required />
+      </div>
+      <div class="form-row">
+        <label for="replyMessage">Message<span>*</span></label>
+        <textarea id="replyMessage" rows="2" required placeholder="This item belongs to me because…"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" id="closeReply" class="btn btn-ghost">Cancel</button>
+        <button type="submit" class="btn btn-primary">Send Reply</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
