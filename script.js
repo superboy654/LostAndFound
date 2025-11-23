@@ -31,17 +31,84 @@ const itemFileInput = document.getElementById("itemFile");
 const itemImageInput = document.getElementById("itemImage");
 const itemImageBase64Input = document.getElementById("itemImageBase64");
 
-// State: role & user
-let currentRole = null;
+// LocalStorage keys
+const itemsKey = "lostFoundItems_v3";
+const historyKey = "lostFoundHistory_v1";
+
+// State
+let currentRole = null; // "student" or "volunteer"
 let currentUser = null;
+let items = [];
+let history = [];
 
-// LocalStorage key
-const STORAGE_KEY = "campus_lost_found_items_v2";
+// ===== HISTORY HELPERS =====
 
-// Volunteer secret password
-const VOLUNTEER_SECRET = "lostfound@campus";
+function loadHistory() {
+  const stored = localStorage.getItem(historyKey);
+  if (stored) {
+    try {
+      history = JSON.parse(stored);
+    } catch {
+      history = [];
+    }
+  }
+}
 
-// Default items with your custom images + dates
+function saveHistory() {
+  localStorage.setItem(historyKey, JSON.stringify(history));
+}
+
+function addHistoryEntry(action, details) {
+  const entry = {
+    id: Date.now(),
+    action, // "approve", "reject", "status-change", "delete"
+    details,
+    by: currentUser ? currentUser.name : "Unknown",
+    role: currentRole || "unknown",
+    time: new Date().toLocaleString()
+  };
+  history.unshift(entry);
+  saveHistory();
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById("historyList");
+  if (!list) return;
+
+  list.innerHTML = "";
+  if (history.length === 0) {
+    const p = document.createElement("p");
+    p.className = "history-item";
+    p.textContent = "No actions recorded yet.";
+    list.appendChild(p);
+    return;
+  }
+
+  history.forEach((h) => {
+    const div = document.createElement("div");
+    div.className = "history-item";
+
+    let line = "";
+    if (h.action === "approve") {
+      line = `✅ <strong>${h.by}</strong> (coordinator) approved claim of <strong>${h.details.claimerName}</strong> for item <strong>${h.details.itemName}</strong>.`;
+    } else if (h.action === "reject") {
+      line = `❌ <strong>${h.by}</strong> (coordinator) rejected claim of <strong>${h.details.claimerName}</strong> for item <strong>${h.details.itemName}</strong>.`;
+    } else if (h.action === "status-change") {
+      line = `🔁 <strong>${h.by}</strong> changed status of <strong>${h.details.itemName}</strong> from ${h.details.from.toUpperCase()} to ${h.details.to.toUpperCase()}.`;
+    } else if (h.action === "delete") {
+      line = `🗑️ <strong>${h.by}</strong> removed item <strong>${h.details.itemName}</strong> from the list.`;
+    } else {
+      line = `${h.by} did something.`;
+    }
+
+    div.innerHTML = line + `<div class="history-meta">${h.time}</div>`;
+    list.appendChild(div);
+  });
+}
+
+// ===== ITEMS LOCALSTORAGE =====
+
 const defaultItems = [
   {
     id: 1,
@@ -97,12 +164,8 @@ const defaultItems = [
   }
 ];
 
-let items = [];
-
-// ========== LOCALSTORAGE HELPERS ==========
-
 function loadItems() {
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const stored = localStorage.getItem(itemsKey);
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
@@ -110,22 +173,19 @@ function loadItems() {
         items = parsed;
         return;
       }
-      throw new Error("Not array");
     } catch {
-      items = [...defaultItems];
-      saveItems();
+      // fall back to default
     }
-  } else {
-    items = [...defaultItems];
-    saveItems();
   }
+  items = [...defaultItems];
+  saveItems();
 }
 
 function saveItems() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  localStorage.setItem(itemsKey, JSON.stringify(items));
 }
 
-// ========== ROLE TABS ==========
+// ===== ROLE TABS =====
 
 roleTabs.forEach((tab) => {
   tab.addEventListener("click", () => {
@@ -143,7 +203,7 @@ roleTabs.forEach((tab) => {
   });
 });
 
-// ========== SET ROLE ==========
+// ===== SET ROLE =====
 
 function setRole(role, userInfo) {
   currentRole = role;
@@ -154,13 +214,14 @@ function setRole(role, userInfo) {
   if (role === "student") {
     roleBadge.textContent = `Student: ${userInfo.name} (${userInfo.branch} ${userInfo.section})`;
   } else {
-    roleBadge.textContent = `Volunteer: ${userInfo.name}`;
+    roleBadge.textContent = `Coordinator: ${userInfo.name}`;
   }
 
   renderItems();
+  renderHistory();
 }
 
-// ========== STUDENT REGISTRATION ==========
+// ===== STUDENT REGISTRATION =====
 
 studentForm.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -177,7 +238,9 @@ studentForm.addEventListener("submit", (e) => {
   setRole("student", { name, id, branch, section });
 });
 
-// ========== VOLUNTEER LOGIN ==========
+// ===== VOLUNTEER LOGIN =====
+
+const VOLUNTEER_SECRET = "lostfound@campus";
 
 volunteerForm.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -197,7 +260,7 @@ volunteerForm.addEventListener("submit", (e) => {
   setRole("volunteer", { name });
 });
 
-// ========== DATE FORMATTER ==========
+// ===== UTILITIES =====
 
 function formatDate(dateStr) {
   if (!dateStr) return "";
@@ -210,7 +273,7 @@ function formatDate(dateStr) {
   });
 }
 
-// ========== IMAGE HANDLING ==========
+// ===== IMAGE HANDLING (UPLOAD / PASTE / URL) =====
 
 // File upload → convert to Base64
 itemFileInput.addEventListener("change", function () {
@@ -220,8 +283,7 @@ itemFileInput.addEventListener("change", function () {
   const reader = new FileReader();
   reader.onload = function (e) {
     itemImageBase64Input.value = e.target.result;
-    // Clear URL if file chosen
-    itemImageInput.value = "";
+    itemImageInput.value = ""; // clear URL if using file
   };
   reader.readAsDataURL(file);
 });
@@ -243,7 +305,7 @@ itemImageInput.addEventListener("paste", function (event) {
   }
 });
 
-// ========== RENDER ITEMS ==========
+// ===== RENDER ITEMS =====
 
 function renderItems() {
   const term = (searchInput?.value || "").trim().toLowerCase();
@@ -343,12 +405,23 @@ function renderItems() {
           approveBtn.style.fontSize = "0.75rem";
 
           approveBtn.addEventListener("click", () => {
+            // mark item as found
             item.type = "found";
             if (!item.date) {
               item.date = new Date().toISOString().slice(0, 10);
             }
+
+            // log history
+            addHistoryEntry("approve", {
+              itemName: item.name,
+              claimerName: rep.name,
+              claimerID: rep.studentID
+            });
+
+            // remove this reply so buttons disappear
+            item.replies = (item.replies || []).filter((r) => r.id !== rep.id);
+
             saveItems();
-            alert("Claim approved. Item marked as FOUND.");
             renderItems();
           });
 
@@ -359,9 +432,15 @@ function renderItems() {
           rejectBtn.style.fontSize = "0.75rem";
 
           rejectBtn.addEventListener("click", () => {
-            item.replies = item.replies.filter((r) => r.id !== rep.id);
+            item.replies = (item.replies || []).filter((r) => r.id !== rep.id);
+
+            addHistoryEntry("reject", {
+              itemName: item.name,
+              claimerName: rep.name,
+              claimerID: rep.studentID
+            });
+
             saveItems();
-            alert("Reply rejected and removed.");
             renderItems();
           });
 
@@ -395,7 +474,8 @@ function renderItems() {
 
       const markBtn = document.createElement("button");
       markBtn.className = "btn-mark-found";
-      markBtn.textContent = item.type === "lost" ? "Mark as Found" : "Mark as Lost";
+      markBtn.textContent =
+        item.type === "lost" ? "Mark as Found" : "Mark as Lost";
       markBtn.addEventListener("click", () => toggleStatus(item.id));
 
       const deleteBtn = document.createElement("button");
@@ -416,29 +496,50 @@ function renderItems() {
   });
 }
 
-// ========== TOGGLE STATUS (VOLUNTEER) ==========
+// ===== TOGGLE STATUS (VOLUNTEER) =====
 
 function toggleStatus(id) {
   if (currentRole !== "volunteer") return;
-  items = items.map((it) =>
-    it.id === id ? { ...it, type: it.type === "lost" ? "found" : "lost" } : it
-  );
+  const item = items.find((it) => it.id === id);
+  if (!item) return;
+
+  const from = item.type;
+  const to = from === "lost" ? "found" : "lost";
+  item.type = to;
+
+  addHistoryEntry("status-change", {
+    itemName: item.name,
+    from,
+    to
+  });
+
   saveItems();
   renderItems();
 }
 
-// ========== DELETE ITEM (VOLUNTEER) ==========
+// ===== DELETE ITEM (VOLUNTEER) =====
 
 function deleteItem(id) {
   if (currentRole !== "volunteer") return;
-  const sure = confirm("Are you sure you want to permanently remove this item?");
+  const item = items.find((it) => it.id === id);
+  if (!item) return;
+
+  const sure = confirm(
+    "Are you sure you want to permanently remove this item?"
+  );
   if (!sure) return;
+
   items = items.filter((it) => it.id !== id);
+
+  addHistoryEntry("delete", {
+    itemName: item.name
+  });
+
   saveItems();
   renderItems();
 }
 
-// ========== MODAL HELPERS ==========
+// ===== MODAL HELPERS =====
 
 function openItemModal() {
   overlay.classList.remove("hidden");
@@ -461,7 +562,7 @@ function closeReplyModal() {
   replyModal.classList.add("hidden");
 }
 
-// ========== ADD ITEM ==========
+// ===== ADD ITEM =====
 
 itemForm.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -507,14 +608,13 @@ itemForm.addEventListener("submit", (e) => {
   items.push(newItem);
   saveItems();
 
-  // Reset fields
   itemForm.reset();
   itemImageBase64Input.value = "";
   closeItemModal();
   renderItems();
 });
 
-// ========== ADD REPLY (STUDENT) ==========
+// ===== ADD REPLY (STUDENT) =====
 
 replyForm.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -556,7 +656,7 @@ replyForm.addEventListener("submit", (e) => {
   renderItems();
 });
 
-// ========== GLOBAL LISTENERS ==========
+// ===== GLOBAL LISTENERS =====
 
 addBtn.addEventListener("click", openItemModal);
 closeForm.addEventListener("click", closeItemModal);
@@ -570,7 +670,9 @@ overlay.addEventListener("click", () => {
 searchInput.addEventListener("input", renderItems);
 filterType.addEventListener("change", renderItems);
 
-// ========== INIT ==========
+// ===== INIT =====
 
 loadItems();
-// Render happens after login (setRole), so items are ready in memory.
+loadHistory();
+renderHistory();
+// renderItems() will be called after login (setRole)
