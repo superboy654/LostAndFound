@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -15,7 +15,7 @@
 
       <div class="role-tabs">
         <button class="role-tab active" data-role="student">Student</button>
-        <button class="role-tab" data-role="volunteer">Campus Admin</button>
+        <button class="role-tab" data-role="volunteer">Lost &amp; Found Coordinator</button>
       </div>
 
       <!-- Student registration form -->
@@ -43,15 +43,15 @@
       <form id="volunteerForm" class="role-form hidden">
         <div class="form-row">
           <label for="volName">Name<span>*</span></label>
-          <input type="text" id="volName" required placeholder="Volunteer name" />
+          <input type="text" id="volName" required placeholder="Coordinator name" />
         </div>
         <div class="form-row">
           <label for="volPassword">Secret Password<span>*</span></label>
           <input type="password" id="volPassword" required placeholder="Ask admin for password" />
         </div>
-        <button type="submit" class="btn btn-secondary wide">Login as Volunteer</button>
+        <button type="submit" class="btn btn-secondary wide">Login as Coordinator</button>
         <p class="role-hint">
-          Only authorized Lost &amp; Found managers should use this login.
+          Only authorized Lost &amp; Found coordinators should use this login.
         </p>
       </form>
     </div>
@@ -61,7 +61,7 @@
   <div class="app hidden">
     <header class="app-header">
       <div>
-        <h1>Techno Campus Lost &amp; Found</h1>
+        <h1>Campus Lost &amp; Found</h1>
         <p>Post, search and track lost items across the campus.</p>
       </div>
       <div class="header-right">
@@ -80,7 +80,7 @@
           <input
             type="text"
             id="searchInput"
-            placeholder="Item, student name, ID, section…" style="border-radius: 7px; height: 100%; width: 50%; padding: 1%;"
+            placeholder="Item, student name, ID, section…"
           />
         </div>
       </div>
@@ -98,6 +98,15 @@
     <section class="items-section">
       <div id="itemsGrid" class="grid"></div>
       <p id="emptyState" class="empty hidden">No items match your search.</p>
+    </section>
+
+    <!-- History section -->
+    <section class="history-section">
+      <div class="history-header">
+        <h2>Action History</h2>
+        <p>Decisions taken by coordinators on claims and items.</p>
+      </div>
+      <div id="historyList" class="history-list"></div>
     </section>
   </div>
 

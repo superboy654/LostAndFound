@@ -1,4 +1,4 @@
- /* ----------------------------------------------------
+/* ----------------------------------------------------
    CYBER GLOW PREMIUM UI THEME
    Ultra-modern neon blue + green glowing design
 ---------------------------------------------------- */
@@ -75,7 +75,6 @@ body {
   text-align: center;
   margin-bottom: 6px;
   background: linear-gradient(90deg, var(--glow-blue), var(--glow-green));
-  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -544,6 +543,54 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ---------- ACTION HISTORY PANEL ---------- */
+
+.history-section {
+  margin-top: 18px;
+  padding: 14px 18px 16px;
+  border-radius: var(--radius-lg);
+  background: var(--panel-soft);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-glow);
+}
+
+.history-header h2 {
+  font-size: 1rem;
+}
+
+.history-header p {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.history-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.history-item {
+  font-size: 0.78rem;
+  padding: 6px 9px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.96);
+  color: var(--muted);
+}
+
+.history-item strong {
+  color: var(--text);
+}
+
+.history-meta {
+  font-size: 0.72rem;
+  margin-top: 2px;
+  opacity: 0.8;
 }
 
 /* RESPONSIVE */
